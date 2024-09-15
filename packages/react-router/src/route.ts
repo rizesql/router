@@ -11,7 +11,7 @@ import { rootRouteId } from './root'
 import type * as React from 'react'
 import type { RootRouteId } from './root'
 import type { UseNavigateResult } from './useNavigate'
-import type { MakeRouteMatch, RouteMatch } from './Matches'
+import type { MakeRouteMatch, MakeRouteMatchUnion, RouteMatch } from './Matches'
 import type { NavigateOptions, ParsePathParams, ToMaskOptions } from './link'
 import type { ParsedLocation } from './location'
 import type { RouteById, RouteIds, RoutePaths } from './routeInfo'
@@ -285,6 +285,7 @@ export interface ContextOptions<
   navigate: NavigateFn
   buildLocation: BuildLocationFn
   cause: 'preload' | 'enter' | 'stay'
+  matches: Array<MakeRouteMatchUnion>
 }
 
 export interface RouteContextOptions<
@@ -1077,10 +1078,49 @@ export class Route<
     TLoaderFn,
     TNewChildren
   > {
-    this.children = (
-      Array.isArray(children) ? children : Object.values(children)
-    ) as any
-    return this as any
+    return this._addFileChildren(children)
+  }
+
+  _addFileChildren<const TNewChildren>(
+    children: TNewChildren,
+  ): Route<
+    TParentRoute,
+    TPath,
+    TFullPath,
+    TCustomId,
+    TId,
+    TSearchValidator,
+    TParams,
+    TRouterContext,
+    TRouteContextFn,
+    TBeforeLoadFn,
+    TLoaderDeps,
+    TLoaderFn,
+    TNewChildren
+  > {
+    if (Array.isArray(children)) {
+      this.children = children as TChildren
+    }
+
+    if (typeof children === 'object' && children !== null) {
+      this.children = Object.values(children) as TChildren
+    }
+
+    return this as unknown as Route<
+      TParentRoute,
+      TPath,
+      TFullPath,
+      TCustomId,
+      TId,
+      TSearchValidator,
+      TParams,
+      TRouterContext,
+      TRouteContextFn,
+      TBeforeLoadFn,
+      TLoaderDeps,
+      TLoaderFn,
+      TNewChildren
+    >
   }
 
   updateLoader = <TNewLoaderFn>(options: {
@@ -1335,9 +1375,10 @@ export class RootRoute<
   in out TRouterContext = {},
   in out TRouteContextFn = AnyContext,
   in out TBeforeLoadFn = AnyContext,
-  TLoaderDeps extends Record<string, any> = {},
+  in out TLoaderDeps extends Record<string, any> = {},
   in out TLoaderFn = undefined,
-  TChildren = unknown,
+  in out TChildren = unknown,
+  in out TFileRouteTypes = unknown,
 > extends Route<
   any, // TParentRoute
   '/', // TPath
@@ -1382,9 +1423,58 @@ export class RootRoute<
     TBeforeLoadFn,
     TLoaderDeps,
     TLoaderFn,
-    TNewChildren
+    TNewChildren,
+    TFileRouteTypes
   > {
-    return super.addChildren(children)
+    super.addChildren(children)
+    return this as unknown as RootRoute<
+      TSearchValidator,
+      TRouterContext,
+      TRouteContextFn,
+      TBeforeLoadFn,
+      TLoaderDeps,
+      TLoaderFn,
+      TNewChildren,
+      TFileRouteTypes
+    >
+  }
+
+  _addFileChildren<const TNewChildren>(
+    children: TNewChildren,
+  ): RootRoute<
+    TSearchValidator,
+    TRouterContext,
+    TRouteContextFn,
+    TBeforeLoadFn,
+    TLoaderDeps,
+    TLoaderFn,
+    TNewChildren,
+    TFileRouteTypes
+  > {
+    super._addFileChildren(children)
+    return this as unknown as RootRoute<
+      TSearchValidator,
+      TRouterContext,
+      TRouteContextFn,
+      TBeforeLoadFn,
+      TLoaderDeps,
+      TLoaderFn,
+      TNewChildren,
+      TFileRouteTypes
+    >
+  }
+
+  _addFileTypes<TFileRouteTypes>(): RootRoute<
+    TSearchValidator,
+    TRouterContext,
+    TRouteContextFn,
+    TBeforeLoadFn,
+    TLoaderDeps,
+    TLoaderFn,
+    TChildren,
+    TFileRouteTypes
+  > {
+    return this as any
   }
 }
 
@@ -1465,7 +1555,7 @@ export type RouteMask<TRouteTree extends AnyRoute> = {
 
 export function createRouteMask<
   TRouteTree extends AnyRoute,
-  TFrom extends RoutePaths<TRouteTree>,
+  TFrom extends RoutePaths<TRouteTree> | string,
   TTo extends string,
 >(
   opts: {

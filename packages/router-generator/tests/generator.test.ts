@@ -2,6 +2,13 @@ import fs from 'node:fs/promises'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
+import {
+  index,
+  layout,
+  physical,
+  rootRoute,
+  route,
+} from '@tanstack/virtual-file-routes'
 import { generator, getConfig } from '../src'
 import type { Config } from '../src'
 
@@ -50,6 +57,29 @@ function rewriteConfigByFolderName(folderName: string, config: Config) {
     case 'custom-tokens':
       config.indexToken = '_1nd3x'
       config.routeToken = '_r0ut3_'
+      break
+    case 'virtual':
+      {
+        const virtualRouteConfig = rootRoute('root.tsx', [
+          index('index.tsx'),
+          layout('layout.tsx', [
+            route('/dashboard', 'db/dashboard.tsx', [
+              index('db/dashboard-index.tsx'),
+              route('/invoices', 'db/dashboard-invoices.tsx', [
+                index('db/invoices-index.tsx'),
+                route('$id', 'db/invoice-detail.tsx'),
+              ]),
+            ]),
+            physical('/hello', 'subtree'),
+          ]),
+        ])
+        config.virtualRouteConfig = virtualRouteConfig
+      }
+      break
+    case 'types-disabled':
+      config.disableTypes = true
+      config.generatedRouteTree =
+        makeFolderDir(folderName) + '/routeTree.gen.js'
       break
     default:
       break
@@ -119,7 +149,11 @@ describe('generator works', async () => {
       const generatedRouteTree = await getRouteTreeFileText(config)
 
       expect(generatedRouteTree).toMatchFileSnapshot(
-        join('generator', folderName, 'routeTree.snapshot.ts'),
+        join(
+          'generator',
+          folderName,
+          `routeTree.snapshot.${config.disableTypes ? 'js' : 'ts'}`,
+        ),
       )
       await postprocess(folderName)
     },

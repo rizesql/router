@@ -138,6 +138,7 @@ export type InferRouterContext<TRouteTree extends AnyRoute> =
     any,
     any,
     any,
+    any,
     any
   >
     ? TRouterContext
@@ -305,7 +306,7 @@ export interface RouterOptions<
    */
   notFoundMode?: 'root' | 'fuzzy'
   /**
-   * The default `gcTime` a route should use if no
+   * The default `gcTime` a route should use if no gcTime is provided.
    *
    * @default 1_800_000 `(30 minutes)`
    * @link [API Docs](https://tanstack.com/router/latest/docs/framework/react/api/router/RouterOptionsType#defaultgctime-property)
@@ -321,7 +322,6 @@ export interface RouterOptions<
    */
   caseSensitive?: boolean
   /**
-   * __Required*__
    *
    * The route tree that will be used to configure the router instance.
    *
@@ -1264,6 +1264,7 @@ export class Router<
         cause: match.cause,
         abortController: match.abortController,
         preload: !!match.preload,
+        matches,
       }
 
       // Get the route context
@@ -1335,7 +1336,8 @@ export class Router<
 
       const fromRouteByFromPathRouteId =
         this.routesById[
-          stayingMatches?.find((d) => d.pathname === fromPath)?.routeId
+          stayingMatches?.find((d) => d.pathname === fromPath)
+            ?.routeId as keyof this['routesById']
         ]
 
       let pathname = dest.to
@@ -1612,7 +1614,7 @@ export class Router<
     })
   }
 
-  navigate: NavigateFn = ({ to, __isRedirect, ...rest }) => {
+  navigate: NavigateFn = ({ to, ...rest }) => {
     // If this link simply reloads the current route,
     // make sure it has a new key so it will trigger a data refresh
 
@@ -1633,7 +1635,7 @@ export class Router<
 
     return this.buildAndCommitLocation({
       ...rest,
-      to,
+      to: to as string,
       // to: toString,
     })
   }
@@ -1764,7 +1766,11 @@ export class Router<
           if (isResolvedRedirect(err)) {
             redirect = err
             if (!this.isServer) {
-              this.navigate({ ...err, replace: true, __isRedirect: true })
+              this.navigate({
+                ...err,
+                replace: true,
+                ignoreBlocker: true,
+              })
             }
           } else if (isNotFound(err)) {
             notFound = err
@@ -1813,12 +1819,16 @@ export class Router<
     // Reset the view transition flag
     delete this.shouldViewTransition
     // Attempt to start a view transition (or just apply the changes if we can't)
-    ;(shouldViewTransition && typeof document !== 'undefined'
-      ? document
-      : undefined
-    )
-      // @ts-expect-error
-      ?.startViewTransition?.(fn) || fn()
+    if (
+      shouldViewTransition &&
+      typeof document !== 'undefined' &&
+      'startViewTransition' in document &&
+      typeof document.startViewTransition === 'function'
+    ) {
+      document.startViewTransition(fn)
+    } else {
+      fn()
+    }
   }
 
   updateMatch = (
@@ -1971,12 +1981,38 @@ export class Router<
               const existingMatch = this.getMatch(matchId)!
               const parentMatchId = matches[index - 1]?.id
 
+              const route = this.looseRoutesById[routeId]!
+
+              const pendingMs =
+                route.options.pendingMs ?? this.options.defaultPendingMs
+
+              const shouldPending = !!(
+                onReady &&
+                !this.isServer &&
+                !preload &&
+                (route.options.loader || route.options.beforeLoad) &&
+                typeof pendingMs === 'number' &&
+                pendingMs !== Infinity &&
+                (route.options.pendingComponent ??
+                  this.options.defaultPendingComponent)
+              )
+
               if (
                 // If we are in the middle of a load, either of these will be present
                 // (not to be confused with `loadPromise`, which is always defined)
                 existingMatch.beforeLoadPromise ||
                 existingMatch.loaderPromise
               ) {
+                if (shouldPending) {
+                  setTimeout(() => {
+                    try {
+                      // Update the match and prematurely resolve the loadMatches promise so that
+                      // the pending component can start rendering
+                      triggerOnReady()
+                    } catch {}
+                  }, pendingMs)
+                }
+
                 // Wait for the beforeLoad to resolve before we continue
                 await existingMatch.beforeLoadPromise
               } else {
@@ -1990,22 +2026,7 @@ export class Router<
                     beforeLoadPromise: createControlledPromise<void>(),
                   }))
 
-                  const route = this.looseRoutesById[routeId]!
                   const abortController = new AbortController()
-
-                  const pendingMs =
-                    route.options.pendingMs ?? this.options.defaultPendingMs
-
-                  const shouldPending = !!(
-                    onReady &&
-                    !this.isServer &&
-                    !preload &&
-                    (route.options.loader || route.options.beforeLoad) &&
-                    typeof pendingMs === 'number' &&
-                    pendingMs !== Infinity &&
-                    (route.options.pendingComponent ??
-                      this.options.defaultPendingComponent)
-                  )
 
                   let pendingTimeout: ReturnType<typeof setTimeout>
 
@@ -2069,6 +2090,7 @@ export class Router<
                       this.navigate({ ...opts, _fromLocation: location }),
                     buildLocation: this.buildLocation,
                     cause: preload ? 'preload' : cause,
+                    matches,
                   }
 
                   let beforeLoadContext =
@@ -2434,7 +2456,7 @@ export class Router<
 
   preloadRoute = async <
     TFrom extends RoutePaths<TRouteTree> | string = string,
-    TTo extends string = '',
+    TTo extends string | undefined = undefined,
     TMaskFrom extends RoutePaths<TRouteTree> | string = TFrom,
     TMaskTo extends string = '',
   >(
@@ -2508,7 +2530,7 @@ export class Router<
 
   matchRoute = <
     TFrom extends RoutePaths<TRouteTree> = '/',
-    TTo extends string = '',
+    TTo extends string | undefined = undefined,
     TResolved = ResolveRelativePath<TFrom, NoInfer<TTo>>,
   >(
     location: ToOptions<
@@ -2521,7 +2543,10 @@ export class Router<
     const matchLocation = {
       ...location,
       to: location.to
-        ? this.resolvePathWithBase((location.from || '') as string, location.to)
+        ? this.resolvePathWithBase(
+            (location.from || '') as string,
+            location.to as string,
+          )
         : undefined,
       params: location.params || {},
       leaveParams: true,

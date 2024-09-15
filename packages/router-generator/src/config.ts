@@ -1,8 +1,10 @@
 import path from 'node:path'
 import { existsSync, readFileSync } from 'node:fs'
 import { z } from 'zod'
+import { virtualRootRouteSchema } from './filesystem/virtual/config'
 
 export const configSchema = z.object({
+  virtualRouteConfig: virtualRootRouteSchema.optional(),
   routeFilePrefix: z.string().optional(),
   routeFileIgnorePrefix: z.string().optional().default('-'),
   routeFileIgnorePattern: z.string().optional(),
@@ -117,5 +119,15 @@ ERROR: The "experimental.enableCodeSplitting" flag has been made stable and is n
       `The "indexToken" and "routeToken" options must be different.`,
     )
   }
+
+  if (
+    config.routeFileIgnorePrefix &&
+    config.routeFileIgnorePrefix.trim() === '_'
+  ) {
+    throw new Error(
+      `The "routeFileIgnorePrefix" cannot be an underscore ("_"). This is a reserved character used to denote a pathless route. Please use a different prefix.`,
+    )
+  }
+
   return config
 }
