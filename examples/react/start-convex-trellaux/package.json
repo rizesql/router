@@ -19,9 +19,9 @@
     "@tanstack/start": "^1.58.8",
     "@convex-dev/react-query": "0.0.0-alpha.5",
     "concurrently": "^8.2.2",
-    "convex": "^1.16.0",
+    "convex": "^1.16.2",
     "ky": "^1.7.2",
-    "msw": "^2.4.7",
+    "msw": "^2.4.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.4.1",
@@ -37,7 +37,7 @@
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
-    "tailwindcss": "^3.4.11",
+    "tailwindcss": "^3.4.13",
     "typescript": "^5.6.2",
     "vite-tsconfig-paths": "^5.0.1"
   }
