@@ -11,6 +11,8 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as RedirectInternalImport } from './routes/redirect-internal'
+import { Route as RedirectExternalImport } from './routes/redirect-external'
 import { Route as PostsImport } from './routes/posts'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as IndexImport } from './routes/index'
@@ -21,6 +23,16 @@ import { Route as LayoutLayout2LayoutBImport } from './routes/_layout/_layout-2/
 import { Route as LayoutLayout2LayoutAImport } from './routes/_layout/_layout-2/layout-a'
 
 // Create/Update Routes
+
+const RedirectInternalRoute = RedirectInternalImport.update({
+  path: '/redirect-internal',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const RedirectExternalRoute = RedirectExternalImport.update({
+  path: '/redirect-external',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const PostsRoute = PostsImport.update({
   path: '/posts',
@@ -85,6 +97,20 @@ declare module '@tanstack/react-router' {
       path: '/posts'
       fullPath: '/posts'
       preLoaderRoute: typeof PostsImport
+      parentRoute: typeof rootRoute
+    }
+    '/redirect-external': {
+      id: '/redirect-external'
+      path: '/redirect-external'
+      fullPath: '/redirect-external'
+      preLoaderRoute: typeof RedirectExternalImport
+      parentRoute: typeof rootRoute
+    }
+    '/redirect-internal': {
+      id: '/redirect-internal'
+      path: '/redirect-internal'
+      fullPath: '/redirect-internal'
+      preLoaderRoute: typeof RedirectInternalImport
       parentRoute: typeof rootRoute
     }
     '/_layout/_layout-2': {
@@ -168,6 +194,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '': typeof LayoutLayout2RouteWithChildren
   '/posts': typeof PostsRouteWithChildren
+  '/redirect-external': typeof RedirectExternalRoute
+  '/redirect-internal': typeof RedirectInternalRoute
   '/posts/$postId': typeof PostsPostIdRoute
   '/posts/': typeof PostsIndexRoute
   '/layout-a': typeof LayoutLayout2LayoutARoute
@@ -177,6 +205,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '': typeof LayoutLayout2RouteWithChildren
+  '/redirect-external': typeof RedirectExternalRoute
+  '/redirect-internal': typeof RedirectInternalRoute
   '/posts/$postId': typeof PostsPostIdRoute
   '/posts': typeof PostsIndexRoute
   '/layout-a': typeof LayoutLayout2LayoutARoute
@@ -188,6 +218,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_layout': typeof LayoutRouteWithChildren
   '/posts': typeof PostsRouteWithChildren
+  '/redirect-external': typeof RedirectExternalRoute
+  '/redirect-internal': typeof RedirectInternalRoute
   '/_layout/_layout-2': typeof LayoutLayout2RouteWithChildren
   '/posts/$postId': typeof PostsPostIdRoute
   '/posts/': typeof PostsIndexRoute
@@ -201,17 +233,29 @@ export interface FileRouteTypes {
     | '/'
     | ''
     | '/posts'
+    | '/redirect-external'
+    | '/redirect-internal'
     | '/posts/$postId'
     | '/posts/'
     | '/layout-a'
     | '/layout-b'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '' | '/posts/$postId' | '/posts' | '/layout-a' | '/layout-b'
+  to:
+    | '/'
+    | ''
+    | '/redirect-external'
+    | '/redirect-internal'
+    | '/posts/$postId'
+    | '/posts'
+    | '/layout-a'
+    | '/layout-b'
   id:
     | '__root__'
     | '/'
     | '/_layout'
     | '/posts'
+    | '/redirect-external'
+    | '/redirect-internal'
     | '/_layout/_layout-2'
     | '/posts/$postId'
     | '/posts/'
@@ -224,12 +268,16 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LayoutRoute: typeof LayoutRouteWithChildren
   PostsRoute: typeof PostsRouteWithChildren
+  RedirectExternalRoute: typeof RedirectExternalRoute
+  RedirectInternalRoute: typeof RedirectInternalRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LayoutRoute: LayoutRouteWithChildren,
   PostsRoute: PostsRouteWithChildren,
+  RedirectExternalRoute: RedirectExternalRoute,
+  RedirectInternalRoute: RedirectInternalRoute,
 }
 
 export const routeTree = rootRoute
@@ -246,7 +294,9 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/_layout",
-        "/posts"
+        "/posts",
+        "/redirect-external",
+        "/redirect-internal"
       ]
     },
     "/": {
@@ -264,6 +314,12 @@ export const routeTree = rootRoute
         "/posts/$postId",
         "/posts/"
       ]
+    },
+    "/redirect-external": {
+      "filePath": "redirect-external.tsx"
+    },
+    "/redirect-internal": {
+      "filePath": "redirect-internal.tsx"
     },
     "/_layout/_layout-2": {
       "filePath": "_layout/_layout-2.tsx",

@@ -119,6 +119,22 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             Deferred
           </Link>{' '}
           <Link
+            to="/redirect-internal"
+            activeProps={{
+              className: 'font-bold',
+            }}
+          >
+            redirect-internal
+          </Link>{' '}
+          <Link
+            to="/redirect-external"
+            activeProps={{
+              className: 'font-bold',
+            }}
+          >
+            redirect-external
+          </Link>{' '}
+          <Link
             // @ts-expect-error
             to="/this-route-does-not-exist"
             activeProps={{

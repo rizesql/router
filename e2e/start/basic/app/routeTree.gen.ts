@@ -13,7 +13,8 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as UsersImport } from './routes/users'
 import { Route as SearchParamsImport } from './routes/search-params'
-import { Route as RedirectImport } from './routes/redirect'
+import { Route as RedirectInternalImport } from './routes/redirect-internal'
+import { Route as RedirectExternalImport } from './routes/redirect-external'
 import { Route as PostsImport } from './routes/posts'
 import { Route as DeferredImport } from './routes/deferred'
 import { Route as LayoutImport } from './routes/_layout'
@@ -39,8 +40,13 @@ const SearchParamsRoute = SearchParamsImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const RedirectRoute = RedirectImport.update({
-  path: '/redirect',
+const RedirectInternalRoute = RedirectInternalImport.update({
+  path: '/redirect-internal',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const RedirectExternalRoute = RedirectExternalImport.update({
+  path: '/redirect-external',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -136,11 +142,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostsImport
       parentRoute: typeof rootRoute
     }
-    '/redirect': {
-      id: '/redirect'
-      path: '/redirect'
-      fullPath: '/redirect'
-      preLoaderRoute: typeof RedirectImport
+    '/redirect-external': {
+      id: '/redirect-external'
+      path: '/redirect-external'
+      fullPath: '/redirect-external'
+      preLoaderRoute: typeof RedirectExternalImport
+      parentRoute: typeof rootRoute
+    }
+    '/redirect-internal': {
+      id: '/redirect-internal'
+      path: '/redirect-internal'
+      fullPath: '/redirect-internal'
+      preLoaderRoute: typeof RedirectInternalImport
       parentRoute: typeof rootRoute
     }
     '/search-params': {
@@ -272,7 +285,8 @@ export interface FileRoutesByFullPath {
   '': typeof LayoutLayout2RouteWithChildren
   '/deferred': typeof DeferredRoute
   '/posts': typeof PostsRouteWithChildren
-  '/redirect': typeof RedirectRoute
+  '/redirect-external': typeof RedirectExternalRoute
+  '/redirect-internal': typeof RedirectInternalRoute
   '/search-params': typeof SearchParamsRoute
   '/users': typeof UsersRouteWithChildren
   '/posts/$postId': typeof PostsPostIdRoute
@@ -288,7 +302,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '': typeof LayoutLayout2RouteWithChildren
   '/deferred': typeof DeferredRoute
-  '/redirect': typeof RedirectRoute
+  '/redirect-external': typeof RedirectExternalRoute
+  '/redirect-internal': typeof RedirectInternalRoute
   '/search-params': typeof SearchParamsRoute
   '/posts/$postId': typeof PostsPostIdRoute
   '/users/$userId': typeof UsersUserIdRoute
@@ -305,7 +320,8 @@ export interface FileRoutesById {
   '/_layout': typeof LayoutRouteWithChildren
   '/deferred': typeof DeferredRoute
   '/posts': typeof PostsRouteWithChildren
-  '/redirect': typeof RedirectRoute
+  '/redirect-external': typeof RedirectExternalRoute
+  '/redirect-internal': typeof RedirectInternalRoute
   '/search-params': typeof SearchParamsRoute
   '/users': typeof UsersRouteWithChildren
   '/_layout/_layout-2': typeof LayoutLayout2RouteWithChildren
@@ -325,7 +341,8 @@ export interface FileRouteTypes {
     | ''
     | '/deferred'
     | '/posts'
-    | '/redirect'
+    | '/redirect-external'
+    | '/redirect-internal'
     | '/search-params'
     | '/users'
     | '/posts/$postId'
@@ -340,7 +357,8 @@ export interface FileRouteTypes {
     | '/'
     | ''
     | '/deferred'
-    | '/redirect'
+    | '/redirect-external'
+    | '/redirect-internal'
     | '/search-params'
     | '/posts/$postId'
     | '/users/$userId'
@@ -355,7 +373,8 @@ export interface FileRouteTypes {
     | '/_layout'
     | '/deferred'
     | '/posts'
-    | '/redirect'
+    | '/redirect-external'
+    | '/redirect-internal'
     | '/search-params'
     | '/users'
     | '/_layout/_layout-2'
@@ -374,7 +393,8 @@ export interface RootRouteChildren {
   LayoutRoute: typeof LayoutRouteWithChildren
   DeferredRoute: typeof DeferredRoute
   PostsRoute: typeof PostsRouteWithChildren
-  RedirectRoute: typeof RedirectRoute
+  RedirectExternalRoute: typeof RedirectExternalRoute
+  RedirectInternalRoute: typeof RedirectInternalRoute
   SearchParamsRoute: typeof SearchParamsRoute
   UsersRoute: typeof UsersRouteWithChildren
   PostsPostIdDeepRoute: typeof PostsPostIdDeepRoute
@@ -385,7 +405,8 @@ const rootRouteChildren: RootRouteChildren = {
   LayoutRoute: LayoutRouteWithChildren,
   DeferredRoute: DeferredRoute,
   PostsRoute: PostsRouteWithChildren,
-  RedirectRoute: RedirectRoute,
+  RedirectExternalRoute: RedirectExternalRoute,
+  RedirectInternalRoute: RedirectInternalRoute,
   SearchParamsRoute: SearchParamsRoute,
   UsersRoute: UsersRouteWithChildren,
   PostsPostIdDeepRoute: PostsPostIdDeepRoute,
@@ -407,7 +428,8 @@ export const routeTree = rootRoute
         "/_layout",
         "/deferred",
         "/posts",
-        "/redirect",
+        "/redirect-external",
+        "/redirect-internal",
         "/search-params",
         "/users",
         "/posts/$postId/deep"
@@ -432,8 +454,11 @@ export const routeTree = rootRoute
         "/posts/"
       ]
     },
-    "/redirect": {
-      "filePath": "redirect.tsx"
+    "/redirect-external": {
+      "filePath": "redirect-external.tsx"
+    },
+    "/redirect-internal": {
+      "filePath": "redirect-internal.tsx"
     },
     "/search-params": {
       "filePath": "search-params.tsx"

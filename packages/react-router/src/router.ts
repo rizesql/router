@@ -1778,11 +1778,15 @@ export class Router<
           if (isResolvedRedirect(err)) {
             redirect = err
             if (!this.isServer) {
-              this.navigate({
-                ...err,
-                replace: true,
-                ignoreBlocker: true,
-              })
+              if (redirect._type === 'external') {
+                window.location.href = redirect.href
+              } else {
+                this.navigate({
+                  ...redirect,
+                  replace: true,
+                  ignoreBlocker: true,
+                })
+              }
             }
           } else if (isNotFound(err)) {
             notFound = err
@@ -1907,7 +1911,11 @@ export class Router<
     }
 
     const handleRedirectAndNotFound = (match: AnyRouteMatch, err: any) => {
-      if (isResolvedRedirect(err)) throw err
+      if (isResolvedRedirect(err)) {
+        if (err._type === 'internal') {
+          throw err
+        }
+      }
 
       if (isRedirect(err) || isNotFound(err)) {
         updateMatch(match.id, (prev) => ({
@@ -2529,6 +2537,9 @@ export class Router<
       return matches
     } catch (err) {
       if (isRedirect(err)) {
+        if (err._type === 'external') {
+          return undefined
+        }
         return await this.preloadRoute({
           ...(err as any),
           _fromLocation: next,

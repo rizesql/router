@@ -3,6 +3,7 @@ import {
   defaultParseSearch,
   isNotFound,
   isRedirect,
+  isResolvedRedirect,
 } from '@tanstack/react-router'
 import invariant from 'tiny-invariant'
 import { eventHandler, toWebRequest } from 'vinxi/http'
@@ -174,6 +175,18 @@ export async function handleServerRequest(request: Request, event?: H3Event) {
 }
 
 function redirectOrNotFoundResponse(error: any) {
+  if (isResolvedRedirect(error)) {
+    if (error._type === 'external') {
+      return new Response(null, {
+        status: error.statusCode,
+        headers: {
+          Location: error.href,
+          ...error.headers,
+        },
+      })
+    }
+  }
+
   const { headers, ...rest } = error
 
   return new Response(JSON.stringify(rest), {
@@ -181,7 +194,7 @@ function redirectOrNotFoundResponse(error: any) {
     headers: {
       'Content-Type': 'application/json',
       [serverFnReturnTypeHeader]: 'json',
-      ...(error.headers || {}),
+      ...(headers || {}),
     },
   })
 }

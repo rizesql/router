@@ -16,12 +16,21 @@ export function useServerFn<T extends (...deps: Array<any>) => Promise<any>>(
       return res
     } catch (err) {
       if (isRedirect(err)) {
-        router.navigate(
-          router.resolveRedirect({
-            ...err,
-            _fromLocation: router.state.location,
-          }),
-        )
+        const resolvedRedirect = router.resolveRedirect({
+          ...err,
+          _fromLocation: router.state.location,
+        })
+        if (resolvedRedirect._type === 'external') {
+          return new Response(null, {
+            status: resolvedRedirect.statusCode,
+            headers: {
+              Location: resolvedRedirect.href,
+              ...resolvedRedirect.headers,
+            },
+          })
+        } else {
+          return router.navigate(resolvedRedirect)
+        }
       }
 
       throw err
